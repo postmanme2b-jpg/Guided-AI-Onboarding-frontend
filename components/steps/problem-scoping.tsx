@@ -24,7 +24,7 @@ interface ProblemScopingProps {
 }
 
 
-export function ProblemScoping({ onComplete, socket, messages, setMessages }: ProblemScopingProps) {
+export function ProblemScoping({ onComplete, onUpdateData, socket, messages, setMessages }: ProblemScopingProps) {
   const [currentInput, setCurrentInput] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
   const [showAnalysis, setShowAnalysis] = useState(false)
