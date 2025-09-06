@@ -27,6 +27,7 @@ import { steps, stepHelpContent } from "@/lib/content"
 import { StepHeader } from "@/components/step-header"
 import { v4 as uuidv4 } from 'uuid';
 import { useDebounce } from "@/hooks/use-debounce"
+import { toast } from "sonner"
 
 // Define a type for the challenge data to enforce structure and prevent `any`
 type ChallengeData = {
@@ -183,6 +184,15 @@ export default function OnboardingWizard() {
       }
   }
 
+  const handleLaunchChallenge = () => {
+    // Here you would typically send the final challengeData to your backend.
+    // For now, we'll just show a success notification.
+    toast.success("🚀 Challenge Launched!", {
+      description: "Your new challenge has been successfully submitted and is now live.",
+      duration: 5000, // Keep the toast visible for 5 seconds
+    });
+  };
+
   const completedStepsCount = Object.keys(challengeData).filter(key => challengeData[key]?.completed).length;
   const progress = (completedStepsCount / (steps.length - 1)) * 100;
   const isCurrentStepCompleted = challengeData[steps[currentStep].id]?.completed;
@@ -292,7 +302,7 @@ export default function OnboardingWizard() {
                     <div className="p-3 bg-orange-100 dark:bg-orange-900/50 border border-orange-200 dark:border-orange-800 rounded-lg">
                         <div className="flex items-center gap-2 mb-2">
                             <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                            <h3 className="font-semibold text-sm text-orange-800 dark:text-orange-200">AI Warnings</h3>
+                            <h3 className="font-semibold text-sm text-orange-800 dark:text-orange-200">AI Review & Suggestions</h3>
                         </div>
                         <ul className="space-y-1.5 list-disc pl-4">
                             {validationIssues.map((issue, index) => (
@@ -344,7 +354,11 @@ export default function OnboardingWizard() {
                         Step {currentStep + 1} of {steps.length}
                         </div>
                         {currentStep === steps.length - 1 ? (
-                        <Button className="bg-green-600 hover:bg-green-700" disabled={completedStepsCount < steps.length - 1}>
+                        <Button
+                            className="bg-green-600 hover:bg-green-700"
+                            disabled={completedStepsCount < steps.length - 1}
+                            onClick={handleLaunchChallenge}
+                        >
                             <Rocket className="h-4 w-4 mr-2" />
                             Launch Challenge
                         </Button>
