@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Send, Bot, User, Sparkles, ArrowRight, Edit3, Loader2 } from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
 
 interface Message {
   id: string
@@ -30,6 +30,13 @@ export function ProblemScoping({ onComplete, onUpdateData, socket, messages, set
   const [showAnalysis, setShowAnalysis] = useState(false)
   const [refinedStatement, setRefinedStatement] = useState("")
   const [finalScope, setFinalScope] = useState<any>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null); // Ref for scrolling
+  const textareaRef = useRef<HTMLTextAreaElement>(null); // Ref for textarea element
+
+  // Auto-scroll to the bottom of the chat when new messages are added
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
@@ -73,6 +80,11 @@ export function ProblemScoping({ onComplete, onUpdateData, socket, messages, set
     setMessages((prev) => [...prev, userMessage])
     setCurrentInput("")
     setIsProcessing(true)
+
+    // Reset textarea height after sending message
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "38px"; // Reset to initial height
+    }
 
     socket.send(JSON.stringify({ role: "user", content: userMessage.content }));
   }
@@ -198,18 +210,30 @@ export function ProblemScoping({ onComplete, onUpdateData, socket, messages, set
                     </div>
                 </div>
                )}
+               <div ref={chatEndRef} />
             </div>
 
             {/* Input Area */}
             {!showAnalysis && (
               <div className="flex gap-2 pt-4 border-t">
-                <Input
+                <Textarea
+                  ref={textareaRef}
                   placeholder="Type your response..."
                   value={currentInput}
-                  onChange={(e) => setCurrentInput(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+                  onChange={(e) => {
+                      setCurrentInput(e.target.value);
+                      const target = e.currentTarget;
+                      target.style.height = "auto";
+                      target.style.height = `${target.scrollHeight}px`;
+                  }}
+                  onKeyPress={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          sendMessage();
+                      }
+                  }}
                   disabled={isProcessing}
-                  className="border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500"
+                  className="resize-none overflow-hidden max-h-[200px] min-h-[32px] h-[38px] border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500 placeholder:text-gray-500 dark:placeholder:text-gray-400 bg-white"
                 />
                 <Button
                   onClick={sendMessage}
@@ -226,4 +250,3 @@ export function ProblemScoping({ onComplete, onUpdateData, socket, messages, set
     </div>
   )
 }
-

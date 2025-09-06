@@ -28,7 +28,7 @@ const prizeTypes = [
 
 const LoadingState = () => (
   <div className="space-y-4">
-    <div className="p-4 bg-muted/80 border border-primary/10 rounded-lg">
+    <div className="p-4 bg-muted/30 dark:bg-muted/80 border border-primary/10 rounded-lg">
       <Skeleton className="h-4 w-1/4 mb-2" />
       <Skeleton className="h-4 w-3/4" />
     </div>
@@ -44,7 +44,12 @@ export function PrizeConfiguration({ onUpdateData, data, problemStatement, chall
   const prizes = data.prizes || [{ position: "1st Place", amount: "", description: "" }];
   const recognitionPlan = data.recognitionPlan || "";
 
-  const { data: aiSuggestions, isLoading: isGenerating } = useAiRecommendations({
+  const { data: aiSuggestions, isLoading: isGenerating } = useAiRecommendations<{
+    recognitionPlan: any;
+    prizes: any;
+    totalBudget: any;
+    prizeType: any;
+    audiences: string[], participationType: string, aiCommentary: string }>({
     endpoint: "prize-recommendations",
     payload: {
       problem_statement: problemStatement.problemStatement,

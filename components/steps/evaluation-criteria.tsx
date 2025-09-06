@@ -10,6 +10,7 @@ import { Slider } from "@/components/ui/slider"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Star, Scale, CheckSquare, MessageCircle, Plus, Trash2, Sparkles } from "lucide-react"
 import { useAiRecommendations } from "@/hooks/useAiRecommendations"
+import {AiSuggestionBox} from "@/components/ui/ai-suggestion-box";
 
 interface EvaluationCriteriaProps {
   onUpdateData: (data: any) => void;
@@ -26,7 +27,7 @@ const scoringModels = [
 
 const LoadingState = () => (
   <div className="space-y-4">
-    <div className="p-4 bg-muted/80 border border-primary/10 rounded-lg">
+    <div className="p-4 bg-muted/30 dark:bg-muted/80 border border-primary/10 rounded-lg">
       <Skeleton className="h-4 w-1/4 mb-2" />
       <Skeleton className="h-4 w-3/4" />
     </div>
@@ -42,7 +43,10 @@ export function EvaluationCriteria({ onUpdateData, data, problemStatement, chall
 
   const totalWeight = useMemo(() => criteria.reduce((sum: number, c: any) => sum + (Number(c.weight) || 0), 0), [criteria]);
 
-  const { data: aiSuggestions, isLoading: isGenerating } = useAiRecommendations({
+  const { data: aiSuggestions, isLoading: isGenerating } = useAiRecommendations<{
+    criteria: any;
+    scoringModel: any;
+    audiences: string[], participationType: string, aiCommentary: string }>({
     endpoint: "evaluation-recommendations",
     payload: {
       problem_statement: problemStatement.problemStatement,
@@ -102,18 +106,7 @@ export function EvaluationCriteria({ onUpdateData, data, problemStatement, chall
           {isGenerating ? <LoadingState /> : (
             <>
               {aiSuggestions?.aiCommentary && (
-                <div className="p-4 bg-secondary border border-primary/20 rounded-lg mb-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                    <span className="font-medium text-secondary-foreground text-sm">AI Suggestion</span>
-                  </div>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
-                    {aiSuggestions.aiCommentary}
-                  </p>
-                  <Button variant="link" className="p-0 h-auto mt-2 text-primary" onClick={applySuggestedCriteria}>
-                    Use these criteria
-                  </Button>
-                </div>
+                <AiSuggestionBox aiCommentary={aiSuggestions.aiCommentary} />
               )}
               <RadioGroup value={scoringModel} onValueChange={(value) => handleUpdate({ model: value })} className="space-y-3">
                 {scoringModels.map((model) => {

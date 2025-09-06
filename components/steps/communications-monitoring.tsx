@@ -4,10 +4,11 @@ import { useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
-import { MessageSquare, Mail, Share2, Bell, BarChart3, Badge } from "lucide-react"
+import { MessageSquare, Mail, Share2, Bell, BarChart3 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAiRecommendations } from "@/hooks/useAiRecommendations"
 import { AiSuggestionBox } from "@/components/ui/ai-suggestion-box"
@@ -35,7 +36,7 @@ const monitoringMetrics = [
 
 const LoadingState = () => (
   <div className="space-y-4">
-    <div className="p-4 bg-muted/80 border border-primary/10 rounded-lg">
+    <div className="p-4 bg-muted/30 dark:bg-muted/80 border border-primary/10 rounded-lg">
       <Skeleton className="h-4 w-1/4 mb-2"/>
       <Skeleton className="h-4 w-3/4"/>
     </div>
@@ -51,7 +52,12 @@ export function CommunicationsMonitoring({ onUpdateData, data, problemStatement,
   const kickoffMessage = data.kickoffMessage || "";
   const reportingFrequency = data.reportingFrequency || "weekly";
 
-  const { data: aiSuggestions, isLoading: isGenerating } = useAiRecommendations({
+  const { data: aiSuggestions, isLoading: isGenerating } = useAiRecommendations<{
+    reportingFrequency: any;
+    metrics: any;
+    channels: any;
+    kickoffMessage: string;
+    audiences: string[], participationType: string, aiCommentary: string }>({
     endpoint: "communications-recommendations",
     payload: {
       problem_statement: problemStatement.problemStatement,
@@ -199,12 +205,12 @@ export function CommunicationsMonitoring({ onUpdateData, data, problemStatement,
                       <Checkbox id={metric.id} checked={isSelected}
                                 onCheckedChange={() => handleMetricToggle(metric.id)}/>
                       <Label htmlFor={metric.id} className="flex-1 cursor-pointer">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between relative">
                           <div>
                             <span className="font-medium">{metric.label}</span>
                             <p className="text-sm text-muted-foreground">{metric.description}</p>
                           </div>
-                           {isRecommended && <Badge variant="secondary">AI Pick</Badge>}
+                           {isRecommended && <Badge className="relative top-2 -right-6">AI Pick</Badge>}
                         </div>
                       </Label>
                     </div>

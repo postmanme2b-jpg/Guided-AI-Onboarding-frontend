@@ -20,7 +20,7 @@ interface TimelineMilestonesProps {
 
 const LoadingState = () => (
     <div className="space-y-4">
-        <div className="p-4 bg-muted/80 border border-primary/10 rounded-lg">
+        <div className="p-4 bg-muted/30 dark:bg-muted/80 border border-primary/10 rounded-lg">
             <Skeleton className="h-4 w-1/4 mb-2" />
             <Skeleton className="h-4 w-3/4" />
         </div>
@@ -52,7 +52,11 @@ export function TimelineMilestones({ onUpdateData, data, problemStatement, chall
     return "";
   }, [startDate, endDate]);
 
-  const { data: aiSuggestions, isLoading: isGenerating } = useAiRecommendations({
+  const { data: aiSuggestions, isLoading: isGenerating } = useAiRecommendations<{
+    milestones: any;
+    endDate: Date;
+    startDate: Date;
+    audiences: string[], participationType: string, aiCommentary: string }>({
     endpoint: "timeline-recommendations",
     payload: {
       problem_statement: problemStatement.problemStatement,
@@ -111,12 +115,7 @@ export function TimelineMilestones({ onUpdateData, data, problemStatement, chall
           {isGenerating ? <LoadingState /> : (
             <>
               {aiSuggestions?.aiCommentary && (
-                <div>
-                  <AiSuggestionBox aiCommentary={aiSuggestions.aiCommentary} />
-                  <Button variant="link" className="p-0 h-auto -mt-4 mb-4 text-primary" onClick={applySuggestedDates}>
-                      Use these dates
-                  </Button>
-                </div>
+                <AiSuggestionBox aiCommentary={aiSuggestions.aiCommentary} />
               )}
               <div className="grid gap-4 md:grid-cols-2">
                 <div>

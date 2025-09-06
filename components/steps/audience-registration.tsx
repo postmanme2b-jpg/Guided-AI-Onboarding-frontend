@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Users, Globe, Building, UserCheck, Sparkles, Settings } from "lucide-react"
 import { useAiRecommendations } from "@/hooks/useAiRecommendations"
+import {AiSuggestionBox} from "@/components/ui/ai-suggestion-box";
 
 interface AudienceRegistrationProps {
   onUpdateData: (data: any) => void;
@@ -33,7 +34,7 @@ const participationTypes = [
 
 const LoadingState = () => (
     <div className="space-y-4">
-        <div className="p-4 bg-muted/80 border border-primary/10 rounded-lg">
+        <div className="p-4 bg-muted/30 dark:bg-muted/80 border border-primary/10 rounded-lg">
             <Skeleton className="h-4 w-1/4 mb-2" />
             <Skeleton className="h-4 w-3/4" />
         </div>
@@ -127,15 +128,7 @@ export function AudienceRegistration({ onUpdateData, data, problemStatement, cha
           {isGenerating ? <LoadingState /> : (
             <>
               {aiSuggestions?.aiCommentary && (
-                <div className="p-4 bg-secondary border border-primary/20 rounded-lg mb-6">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Sparkles className="h-4 w-4 text-primary" />
-                      <span className="font-medium text-secondary-foreground text-sm">AI Suggestion</span>
-                    </div>
-                    <p className="text-muted-foreground text-sm leading-relaxed">
-                      {aiSuggestions.aiCommentary}
-                    </p>
-                </div>
+                <AiSuggestionBox aiCommentary={aiSuggestions.aiCommentary} />
               )}
               <div className="grid gap-4 md:grid-cols-2">
                 {audienceTypes.map((audience) => {

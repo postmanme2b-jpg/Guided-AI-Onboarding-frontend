@@ -97,7 +97,7 @@ export function ChallengeTypeRecommendation({ onUpdateData, data, problemStateme
     const newRecommendations = recommendations.map((rec: any) =>
       rec.id === id ? { ...rec, weight: newWeight } : rec
     );
-    newRecommendations.sort((a, b) => b.weight - a.weight);
+    newRecommendations.sort((a: { weight: number }, b: { weight: number }) => b.weight - a.weight);
     onUpdateData({
         ...data,
         recommendations: newRecommendations,

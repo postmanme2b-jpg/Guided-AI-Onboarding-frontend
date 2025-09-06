@@ -37,7 +37,6 @@ export function DynamicForm({ schema, onValuesChange, defaultValues = {} }: Dyna
   useEffect(() => {
     const stringifiedValues = JSON.stringify(watchedValues);
     onValuesChange(JSON.parse(stringifiedValues));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(watchedValues), onValuesChange]);
 
   const renderField = (name: string, fieldConfig: any) => {

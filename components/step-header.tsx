@@ -15,12 +15,12 @@ export function StepHeader({ title, description, tips }: StepHeaderProps) {
         </div>
         <div className="flex-1">
           <h2 className="font-semibold text-xl text-gray-900 dark:text-gray-100 mb-2">{title}</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">{description}</p>
+          <p className="text-gray-800 dark:text-gray-200 mb-4">{description}</p>
           <div className="space-y-2">
             {tips.map((tip, index) => (
               <div key={index} className="flex items-start gap-2 text-sm text-gray-500 dark:text-gray-500">
                 <Info className="h-3.5 w-3.5 mt-0.5 text-blue-500 flex-shrink-0" />
-                <span>{tip}</span>
+                <span className="font-medium text-gray-800 dark:text-gray-200">{tip}</span>
               </div>
             ))}
           </div>

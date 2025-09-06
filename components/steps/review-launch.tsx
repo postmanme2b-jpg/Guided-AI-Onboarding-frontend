@@ -1,16 +1,16 @@
 "use client"
 
-import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Rocket, CheckCircle, AlertCircle, Sparkles, Lightbulb } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
+import { useToast } from "@/hooks/use-toast"
 
 
 interface ReviewLaunchProps {
   challengeData: any
-  onComplete: (data: any) => void
+  validationIssues: string[]
 }
 
 const challengeTypesInfo: Record<string, {name: string, description: string}> = {
@@ -51,16 +51,14 @@ const promotionChannelsInfo: Record<string, string> = {
 };
 
 
-export function ReviewLaunch({ challengeData, onComplete }: ReviewLaunchProps) {
-  const [validationIssues, setValidationIssues] = useState<string[]>([]);
-  const [isValidating, setIsValidating] = useState(true);
+export function ReviewLaunch({ challengeData, validationIssues }: ReviewLaunchProps) {
+    const { toast } = useToast();
 
-
-  const getSectionStatus = (sectionKey: string) => {
-    const section = challengeData[sectionKey];
-    if (!section || !section.completed) return "incomplete";
-    return "complete";
-  }
+    const getSectionStatus = (sectionKey: string) => {
+        const section = challengeData[sectionKey];
+        if (!section || !section.completed) return "incomplete";
+        return "complete";
+    };
 
   const sections = [
     { key: "problem-scoping", title: "Problem Scoping" },
@@ -76,10 +74,12 @@ export function ReviewLaunch({ challengeData, onComplete }: ReviewLaunchProps) {
   const completedSections = sections.filter((section) => getSectionStatus(section.key) === "complete").length
   const completionPercentage = Math.round((completedSections / sections.length) * 100)
 
-  const handleLaunch = () => {
-    onComplete({ launched: true, launchDate: new Date().toISOString(), completed: true })
-    alert("Challenge launched successfully!")
-  }
+    const handleLaunch = () => {
+        toast({
+            title: "Challenge Launched!",
+            description: "Your challenge has been successfully launched.",
+        });
+    };
 
   return (
     <div className="space-y-6">
@@ -132,10 +132,10 @@ export function ReviewLaunch({ challengeData, onComplete }: ReviewLaunchProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {isValidating ? (
+          {validationIssues.length === 0 ? (
              <div className="flex items-center text-muted-foreground">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500 mr-2"></div>
-                Analyzing your challenge setup...
+                <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                No issues detected. Your challenge setup looks great!
              </div>
           ) : (
             <ul className="space-y-3">
@@ -243,7 +243,7 @@ export function ReviewLaunch({ challengeData, onComplete }: ReviewLaunchProps) {
                     </div>
                     <div>
                         <h3 className="font-semibold">Duration</h3>
-                        <p className="text-muted-foreground">{challengeData['timeline-milestones'].duration}</p>
+                        <p className="text-muted-foreground">{challengeData['timeline-milestones']?.duration || 'Not Set'}</p>
                     </div>
                 </CardContent>
             </Card>
@@ -285,12 +285,6 @@ export function ReviewLaunch({ challengeData, onComplete }: ReviewLaunchProps) {
                     <p className="text-sm text-green-600 dark:text-green-400">
                     Your challenge is {completionPercentage}% complete.
                     </p>
-                </div>
-                <div className="w-full md:w-auto">
-                    <Button onClick={handleLaunch} className="bg-green-600 hover:bg-green-700 w-full" disabled={completionPercentage < 100}>
-                        <Rocket className="h-4 w-4 mr-2" />
-                        Launch Challenge
-                    </Button>
                 </div>
             </div>
             <Separator className="my-4" />

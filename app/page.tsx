@@ -28,25 +28,43 @@ import { StepHeader } from "@/components/step-header"
 import { v4 as uuidv4 } from 'uuid';
 import { useDebounce } from "@/hooks/use-debounce"
 
+// Define a type for the challenge data to enforce structure and prevent `any`
+type ChallengeData = {
+  [key: string]: {
+    completed?: boolean;
+    [subKey: string]: any;
+  };
+};
+
+// Define a type for the WebSocket message payload
+type WebSocketMessage = {
+  id: string;
+  type: 'user' | 'ai' | 'analysis';
+  content: string;
+  data?: any;
+  timestamp: Date;
+};
 
 export default function OnboardingWizard() {
-  const [currentStep, setCurrentStep] = useState(0)
-  const [challengeData, setChallengeData] = useState<Record<string, any>>({})
-  const [sessionId, setSessionId] = useState('');
-  const [messages, setMessages] = useState<any[]>([]);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [challengeData, setChallengeData] = useState<ChallengeData>({});
+  const [messages, setMessages] = useState<WebSocketMessage[]>([]);
   const socketRef = useRef<WebSocket | null>(null);
-  const [validationIssues, setValidationIssues] = useState<string[]>([])
+  const [validationIssues, setValidationIssues] = useState<string[]>([]);
   const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
   const wsUrl = process.env.NEXT_PUBLIC_WS_BASE_URL || "ws://localhost:8000";
+  const mainContentRef = useRef<HTMLDivElement>(null);
 
-  // Debounce the challengeData state. The API call will only be made
-  // after the user has stopped typing/interacting for 1 second.
+  // Debounce the challengeData state.
   const debouncedChallengeData = useDebounce(challengeData, 1000);
+
+  // Scroll to the top of the main content area when the step changes
+  useEffect(() => {
+    mainContentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentStep]);
 
   useEffect(() => {
     const newSessionId = uuidv4();
-    setSessionId(newSessionId);
-
     const socket = new WebSocket(`${wsUrl}/ws?session=${newSessionId}`);
     socketRef.current = socket;
 
@@ -56,7 +74,7 @@ export default function OnboardingWizard() {
 
     socket.onmessage = (event) => {
         const messageContent = event.data;
-        let aiMessage;
+        let aiMessage: WebSocketMessage;
 
         try {
             const parsedContent = JSON.parse(messageContent);
@@ -89,17 +107,15 @@ export default function OnboardingWizard() {
     return () => {
         socket.close();
     };
-  }, []);
+  }, [wsUrl]);
 
-  // Use useCallback to stabilize the function reference across re-renders.
   const updateChallengeData = useCallback((stepId: string, data: any) => {
     setChallengeData((prev) => ({
       ...prev,
-      [stepId]: data,
+      [stepId]: { ...prev[stepId], ...data, completed: true },
     }));
   }, []);
 
-  // This useEffect now depends on the debounced data, preventing excessive API calls.
   useEffect(() => {
     const validateCurrentState = async () => {
         if (Object.keys(debouncedChallengeData).length === 0) return
@@ -120,7 +136,7 @@ export default function OnboardingWizard() {
     };
 
     validateCurrentState();
-  }, [debouncedChallengeData]);
+  }, [debouncedChallengeData, apiUrl]);
 
 
   const handleNext = () => {
@@ -132,10 +148,12 @@ export default function OnboardingWizard() {
   const handleBack = () => {
     if (currentStep > 0) {
         const newChallengeData = { ...challengeData };
-        for (let i = currentStep - 1; i < steps.length; i++) {
+        // When going back, clear the data for the current step and subsequent steps
+        // to ensure data is re-fetched and re-validated for cascading updates.
+        for (let i = currentStep; i < steps.length; i++) {
             const stepIdToClear = steps[i].id;
             if (newChallengeData[stepIdToClear]) {
-                delete newChallengeData[stepIdToClear].completed;
+                delete newChallengeData[stepIdToClear];
             }
         }
         setChallengeData(newChallengeData);
@@ -144,27 +162,30 @@ export default function OnboardingWizard() {
   }
 
   const handleStepSelect = (stepIndex: number) => {
-     const isStepCompletedOrCurrent = Object.values(challengeData)
-        .slice(0, stepIndex)
-        .every(step => step.completed);
+      // Check if the user is clicking on a valid step.
+      // A step is valid if it's the current step, a previous completed step, or the immediate next step.
+      const isNextStepValid = stepIndex === currentStep + 1 && challengeData[steps[currentStep].id]?.completed;
+      const isPrevStepValid = stepIndex < currentStep;
 
-    if (stepIndex <= currentStep || isStepCompletedOrCurrent) {
-        if (stepIndex < currentStep) {
-            const newChallengeData = { ...challengeData };
-            for (let i = stepIndex; i < steps.length; i++) {
-                 const stepIdToClear = steps[i].id;
-                 if (newChallengeData[stepIdToClear]) {
-                    delete newChallengeData[stepIdToClear].completed;
-                 }
-            }
-            setChallengeData(newChallengeData);
-        }
-        setCurrentStep(stepIndex);
-    }
+      if (stepIndex === currentStep || isPrevStepValid || isNextStepValid) {
+          if (stepIndex < currentStep) {
+              const newChallengeData = { ...challengeData };
+              // Clear data for all steps after the one being selected to trigger re-validation.
+              for (let i = stepIndex + 1; i < steps.length; i++) {
+                  const stepIdToClear = steps[i].id;
+                  if (newChallengeData[stepIdToClear]) {
+                      delete newChallengeData[stepIdToClear];
+                  }
+              }
+              setChallengeData(newChallengeData);
+          }
+          setCurrentStep(stepIndex);
+      }
   }
 
   const completedStepsCount = Object.keys(challengeData).filter(key => challengeData[key]?.completed).length;
-  const progress = (completedStepsCount / (steps.length -1) ) * 100;
+  const progress = (completedStepsCount / (steps.length - 1)) * 100;
+  const isCurrentStepCompleted = challengeData[steps[currentStep].id]?.completed;
 
 
   const renderStepComponent = () => {
@@ -185,7 +206,6 @@ export default function OnboardingWizard() {
                         />
             case "challenge-type":
                 return <ChallengeTypeRecommendation
-                            onComplete={handleNext}
                             onUpdateData={(data) => updateChallengeData(stepId, data)}
                             data={stepData}
                             problemStatement={challengeData["problem-scoping"] || {}}
@@ -233,7 +253,7 @@ export default function OnboardingWizard() {
                             challengeType={challengeData["challenge-type"] || {}}
                         />
             case "review-launch":
-                return <ReviewLaunch onComplete={handleNext} challengeData={challengeData} />
+                return <ReviewLaunch challengeData={challengeData} validationIssues={validationIssues} />
             default:
                 return <div>Unknown Step</div>
         }
@@ -255,7 +275,7 @@ export default function OnboardingWizard() {
              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
                 Wazoku Challenge
              </h1>
-             <p className="text-sm text-muted-foreground">AI-Guided Onboarding Wizard</p>
+             <p className="text-sm text-gray-800 dark:text-gray-200">AI-Guided Onboarding Wizard</p>
           </SidebarHeader>
            <SidebarContent>
             <div className="mb-4 px-2">
@@ -282,22 +302,23 @@ export default function OnboardingWizard() {
                     </div>
                 </div>
              )}
-            <SidebarMenu>
+            <SidebarMenu className={"mb-5"}>
               {steps.map((step, index) => {
-                 const isCompleted = challengeData[step.id]?.completed
+                 const isCompleted = !!challengeData[step.id]?.completed;
+                 const isDisabled = !isCompleted && index > completedStepsCount;
                  const Icon = step.icon
                  return(
                     <SidebarMenuItem key={step.id}>
                         <SidebarMenuButton
                         onClick={() => handleStepSelect(index)}
                         isActive={currentStep === index}
-                        disabled={index > completedStepsCount + 1 && index !== currentStep}
-                        className="h-auto"
+                        disabled={isDisabled}
+                        className={`h-auto ${isDisabled ? 'cursor-not-allowed opacity-50 hover:bg-transparent' : ''}`}
                         >
                         {isCompleted ? <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" /> : <Icon className="h-5 w-5 flex-shrink-0" />}
                          <div className="flex-1 min-w-0 text-left">
-                            <div className="font-medium text-sm">{step.title}</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">{step.description}</div>
+                            <div className={`font-medium text-sm ${currentStep === index ? 'text-white-600 dark:text-white-400' : isCompleted ? 'text-green-600 ' : ''}`}>{step.title}</div>
+                            <div className={`text-xs ${currentStep === index ? 'text-white-400 dark:text-white-300' : isCompleted ? 'text-green-600' : 'text-gray-600 dark:text-gray-300'}`}>{step.description}</div>
                         </div>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -307,7 +328,7 @@ export default function OnboardingWizard() {
           </SidebarContent>
         </Sidebar>
         <SidebarInset>
-            <main className="flex-1 flex flex-col">
+            <main ref={mainContentRef} className="flex-1 flex flex-col">
                 <div className="flex-1 w-full p-8 overflow-y-auto">
                     <div className="max-w-4xl mx-auto">
                         {renderStepComponent()}
@@ -323,13 +344,13 @@ export default function OnboardingWizard() {
                         Step {currentStep + 1} of {steps.length}
                         </div>
                         {currentStep === steps.length - 1 ? (
-                        <Button className="bg-green-600 hover:bg-green-700" onClick={() => alert("Challenge Launched!")}>
+                        <Button className="bg-green-600 hover:bg-green-700" disabled={completedStepsCount < steps.length - 1}>
                             <Rocket className="h-4 w-4 mr-2" />
                             Launch Challenge
                         </Button>
                         ) : (
                         <Button onClick={handleNext}
-                        disabled={!challengeData[steps[currentStep].id]?.completed}
+                        disabled={!isCurrentStepCompleted}
                         >
                             Next
                             <ArrowRight className="h-4 w-4 ml-2" />
@@ -343,4 +364,3 @@ export default function OnboardingWizard() {
     </SidebarProvider>
   )
 }
-

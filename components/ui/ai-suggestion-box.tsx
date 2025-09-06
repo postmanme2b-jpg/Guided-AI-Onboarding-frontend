@@ -37,12 +37,12 @@ export function AiSuggestionBox({aiCommentary}: AiSuggestionBoxProps) {
     <div className="p-4 bg-secondary border border-primary/20 rounded-lg mb-6">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-primary"/>
+          <Sparkles className="h-4 w-4 text-white dark:text-primary"/>
           <span className="font-medium text-secondary-foreground text-sm">AI Suggestion</span>
         </div>
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+            <Button variant="ghost" size="sm" className="text-secondary-foreground dark:text-muted-foreground hover:text-foreground">
               <AlertTriangle className="h-4 w-4 mr-1"/> Report Issue
             </Button>
           </PopoverTrigger>
@@ -64,7 +64,7 @@ export function AiSuggestionBox({aiCommentary}: AiSuggestionBoxProps) {
           </PopoverContent>
         </Popover>
       </div>
-      <p className="text-muted-foreground text-sm leading-relaxed">
+      <p className="text-secondary-foreground dark:text-muted-foreground text-sm leading-relaxed">
         {aiCommentary}
       </p>
     </div>
